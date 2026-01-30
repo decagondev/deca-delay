@@ -330,9 +330,53 @@ async function fadeInSequence(elements: HTMLElement[]) {
 }
 ```
 
+## Local Development
+
+### Testing with npm link
+
+To test local changes before publishing:
+
+```bash
+# Build the package
+npm run build
+
+# Create a global link
+npm link
+
+# In your test project
+npm link deca-delay
+```
+
+### Running tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm test -- --watch
+
+# Run with coverage
+npm test -- --coverage
+```
+
+### Example consumer
+
+Check out `examples/test-consumer` for a complete example of using deca-delay:
+
+```bash
+cd examples/test-consumer
+npm install
+npm test
+```
+
 ## Requirements
 
 - Node.js >= 14
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 

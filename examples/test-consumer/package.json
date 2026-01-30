@@ -1,0 +1,13 @@
+{
+  "name": "test-consumer",
+  "version": "1.0.0",
+  "description": "Test consumer for deca-delay package",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "node index.js"
+  },
+  "dependencies": {
+    "deca-delay": "file:../.."
+  }
+}
