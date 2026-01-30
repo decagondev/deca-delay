@@ -1,4 +1,5 @@
 import { until } from '../src/until';
+import { TimeoutError } from '../src/errors';
 
 describe('until (sync conditions)', () => {
   const TIMING_TOLERANCE = 50;
@@ -99,7 +100,19 @@ describe('until (sync conditions)', () => {
   it('should timeout if condition never becomes true', async () => {
     await expect(
       until(() => false, { timeout: 100, interval: 20 })
-    ).rejects.toThrow('Condition not met within 100ms timeout');
+    ).rejects.toThrow(TimeoutError);
+  });
+
+  it('should throw TimeoutError with correct timeout value', async () => {
+    const timeout = 100;
+    try {
+      await until(() => false, { timeout, interval: 20 });
+      fail('Should have thrown TimeoutError');
+    } catch (error) {
+      expect(error).toBeInstanceOf(TimeoutError);
+      expect((error as TimeoutError).timeout).toBe(timeout);
+      expect((error as TimeoutError).message).toBe(`Condition not met within ${timeout}ms timeout`);
+    }
   });
 
   it('should propagate errors thrown by condition function', async () => {
@@ -209,7 +222,7 @@ describe('until (async conditions)', () => {
   it('should timeout with async condition that never returns true', async () => {
     await expect(
       until(async () => false, { timeout: 100, interval: 20 })
-    ).rejects.toThrow('Condition not met within 100ms timeout');
+    ).rejects.toThrow(TimeoutError);
   });
 
   it('should work with mixed sync and async behavior', async () => {

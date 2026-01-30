@@ -1,3 +1,4 @@
+import { TimeoutError } from './errors';
 import type { Condition, DelayUntilOptions } from './types';
 
 /**
@@ -30,6 +31,7 @@ function isPromiseLike(value: unknown): value is Promise<unknown> {
  * @param options - Configuration options for polling behavior
  * @returns A Promise that resolves when the condition is met
  * @throws Error if the condition function is not a function
+ * @throws TimeoutError if the condition is not met within the timeout period
  *
  * @example
  * ```typescript
@@ -80,7 +82,7 @@ export function until(
 
         const elapsed = Date.now() - startTime;
         if (elapsed >= timeout) {
-          reject(new Error(`Condition not met within ${timeout}ms timeout`));
+          reject(new TimeoutError(timeout));
           return;
         }
 
