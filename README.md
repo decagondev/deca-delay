@@ -161,6 +161,175 @@ const isReady: Condition = async () => {
 await delay.until(isReady, options);
 ```
 
+## Examples
+
+### Playwright/Puppeteer Integration
+
+```typescript
+import { delay } from 'deca-delay';
+import { chromium } from 'playwright';
+
+async function automateLogin() {
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  
+  await page.goto('https://example.com/login');
+  
+  // Wait for page to be interactive
+  await delay.until(async () => await page.isVisible('#login-form'));
+  
+  // Fill credentials with human-like delays
+  await page.fill('#username', 'user@example.com');
+  await delay.random(100, 300); // Human-like typing pause
+  
+  await page.fill('#password', 'password');
+  await delay.random(200, 500);
+  
+  await page.click('#submit');
+  
+  // Wait for successful login
+  await delay.until(
+    async () => await page.isVisible('#dashboard'),
+    { timeout: 10000 }
+  );
+  
+  console.log('Login successful!');
+  await browser.close();
+}
+```
+
+### Retry with Exponential Backoff
+
+```typescript
+import { delay } from 'deca-delay';
+
+async function fetchWithRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3
+): Promise<T> {
+  let lastError: Error | undefined;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+      
+      if (attempt < maxRetries - 1) {
+        // Exponential backoff with jitter
+        const baseDelay = Math.pow(2, attempt) * 1000;
+        await delay.random(baseDelay, baseDelay * 1.5);
+      }
+    }
+  }
+  
+  throw lastError;
+}
+
+// Usage
+const data = await fetchWithRetry(async () => {
+  const response = await fetch('https://api.example.com/data');
+  if (!response.ok) throw new Error('API error');
+  return response.json();
+});
+```
+
+### Polling for API Status
+
+```typescript
+import { delay, TimeoutError } from 'deca-delay';
+
+async function waitForJobCompletion(jobId: string): Promise<JobResult> {
+  let result: JobResult | null = null;
+  
+  try {
+    await delay.until(
+      async () => {
+        const response = await fetch(`/api/jobs/${jobId}`);
+        const job = await response.json();
+        
+        if (job.status === 'completed') {
+          result = job.result;
+          return true;
+        }
+        
+        if (job.status === 'failed') {
+          throw new Error(job.error);
+        }
+        
+        return false; // Still processing
+      },
+      {
+        interval: 2000,   // Check every 2 seconds
+        timeout: 300000   // 5 minute timeout
+      }
+    );
+  } catch (error) {
+    if (error instanceof TimeoutError) {
+      throw new Error(`Job ${jobId} did not complete within 5 minutes`);
+    }
+    throw error;
+  }
+  
+  return result!;
+}
+```
+
+### Rate Limiting
+
+```typescript
+import { delay } from 'deca-delay';
+
+class RateLimiter {
+  private lastRequest = 0;
+  
+  constructor(private minInterval: number) {}
+  
+  async throttle(): Promise<void> {
+    const now = Date.now();
+    const elapsed = now - this.lastRequest;
+    
+    if (elapsed < this.minInterval) {
+      await delay(this.minInterval - elapsed);
+    }
+    
+    this.lastRequest = Date.now();
+  }
+}
+
+// Usage: Max 10 requests per second
+const limiter = new RateLimiter(100);
+
+async function fetchAll(urls: string[]) {
+  const results = [];
+  
+  for (const url of urls) {
+    await limiter.throttle();
+    results.push(await fetch(url));
+  }
+  
+  return results;
+}
+```
+
+### Animation Sequencing
+
+```typescript
+import { delay } from 'deca-delay';
+
+async function fadeInSequence(elements: HTMLElement[]) {
+  for (const element of elements) {
+    element.style.opacity = '0';
+    element.style.transition = 'opacity 0.3s';
+  }
+  
+  for (const element of elements) {
+    element.style.opacity = '1';
+    await delay(150); // Stagger each element
+  }
+}
+```
+
 ## Requirements
 
 - Node.js >= 14
