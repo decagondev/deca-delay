@@ -7,14 +7,15 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
     }
   },
   "scripts": {
     "build": "tsup",
     "test": "jest",
+    "lint": "tsc --noEmit",
     "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
@@ -50,5 +51,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/yourusername/deca-delay.git"
-  }
+  },
+  "sideEffects": false
 }
