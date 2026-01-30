@@ -187,10 +187,10 @@ flowchart TD
 ### Usage Flow for delay.until (Mermaid)
 ```mermaid
 flowchart LR
-    Start[Call delay.until(fn, options)] --> Check[Evaluate fn()]
-    Check -->|False| Delay[await delay(interval)]
-    Delay --> Timeout?{Timeout exceeded?}
-    Timeout? -->|Yes| Throw[Throw Error]
-    Timeout? -->|No| Check
+    Start[Call delay.until fn, options] --> Check[Evaluate fn]
+    Check -->|False| Delay[await delay interval]
+    Delay --> Timeout{Timeout exceeded?}
+    Timeout -->|Yes| Throw[Throw Error]
+    Timeout -->|No| Check
     Check -->|True| End[Resolve Promise]
 ```
