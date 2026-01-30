@@ -1,0 +1,107 @@
+---
+description: Testing conventions for deca-delay
+globs: ["__tests__/**/*.ts", "**/*.test.ts", "**/*.spec.ts"]
+---
+
+# Testing Conventions for deca-delay
+
+## Test Structure
+- All tests in `__tests__/` directory at project root
+- One test file per source module (e.g., `delay.test.ts` for `delay.ts`)
+- Integration tests in `__tests__/integration.test.ts`
+
+## Naming Conventions
+```typescript
+// File naming
+delay.test.ts       // Unit tests for delay.ts
+random.test.ts      // Unit tests for random.ts
+integration.test.ts // Cross-module tests
+
+// Test naming: describe what it does
+describe('delay', () => {
+  it('should resolve after specified milliseconds', async () => {});
+  it('should handle zero milliseconds', async () => {});
+});
+```
+
+## Test Categories
+
+### Unit Tests
+Test individual functions in isolation:
+```typescript
+describe('delay', () => {
+  it('should resolve after specified milliseconds', async () => {
+    const start = Date.now();
+    await delay(100);
+    const elapsed = Date.now() - start;
+    expect(elapsed).toBeGreaterThanOrEqual(95);  // Allow small variance
+    expect(elapsed).toBeLessThan(150);
+  });
+});
+```
+
+### Error Handling Tests
+Test all error paths:
+```typescript
+describe('random', () => {
+  it('should throw when min > max', async () => {
+    await expect(delay.random(1000, 500)).rejects.toThrow();
+  });
+});
+```
+
+### Async Tests
+Always use async/await pattern:
+```typescript
+// Good
+it('should wait for condition', async () => {
+  let ready = false;
+  setTimeout(() => ready = true, 100);
+  await delay.until(() => ready);
+  expect(ready).toBe(true);
+});
+
+// Bad: callback style
+it('should wait for condition', (done) => {
+  // Avoid done() callback pattern
+});
+```
+
+## Timing Tests
+Use tolerance ranges for timing assertions:
+```typescript
+const TIMING_TOLERANCE = 50; // ms tolerance for timing tests
+
+it('should delay approximately 100ms', async () => {
+  const start = Date.now();
+  await delay(100);
+  const elapsed = Date.now() - start;
+  expect(elapsed).toBeGreaterThanOrEqual(100 - TIMING_TOLERANCE);
+  expect(elapsed).toBeLessThan(100 + TIMING_TOLERANCE);
+});
+```
+
+## Mocking
+- Use Jest's built-in timers for time-sensitive tests when needed
+- Prefer real timers for short delays (< 500ms)
+
+```typescript
+// For longer delays, use fake timers
+jest.useFakeTimers();
+const promise = delay(5000);
+jest.advanceTimersByTime(5000);
+await promise;
+jest.useRealTimers();
+```
+
+## Coverage Expectations
+- Minimum 90% line coverage
+- 100% coverage for public API functions
+- All error paths must be tested
+
+## Test Commands
+```bash
+npm test              # Run all tests
+npm test -- --watch   # Watch mode
+npm test -- --coverage # Generate coverage report
+```

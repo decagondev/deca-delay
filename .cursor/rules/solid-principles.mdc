@@ -1,0 +1,100 @@
+---
+description: SOLID principles enforcement for deca-delay
+globs: ["src/**/*.ts"]
+---
+
+# SOLID Principles for deca-delay
+
+## Single Responsibility Principle (SRP)
+Each module/function should have ONE reason to change.
+
+### Module Structure
+- `delay.ts` - Fixed delay functionality only
+- `random.ts` - Random delay with validation only
+- `until.ts` - Conditional polling only
+- `errors.ts` - Custom error classes only
+- `index.ts` - Public API composition only
+
+### Function Guidelines
+```typescript
+// Good: Single responsibility
+export function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Bad: Multiple responsibilities
+export function delayAndLog(ms: number): Promise<void> {
+  console.log(`Waiting ${ms}ms...`);  // Logging is separate concern
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+```
+
+## Open-Closed Principle (OCP)
+Open for extension, closed for modification.
+
+### Extension Pattern
+```typescript
+// The delay function can be extended via Object.assign
+// without modifying the core implementation
+export const delay = Object.assign(baseDelay, { random, until });
+
+// Future extensions added the same way:
+// delay.exponential = exponentialBackoff;
+```
+
+## Liskov Substitution Principle (LSP)
+Subtypes must be substitutable for their base types.
+
+### Condition Functions
+```typescript
+// Both sync and async conditions work identically
+type SyncCondition = () => boolean;
+type AsyncCondition = () => Promise<boolean>;
+type Condition = SyncCondition | AsyncCondition;
+
+// The until function handles both transparently
+await delay.until(() => ready);              // sync
+await delay.until(async () => await check()); // async
+```
+
+## Interface Segregation Principle (ISP)
+Clients shouldn't depend on interfaces they don't use.
+
+### Narrow Interfaces
+```typescript
+// Good: Focused interface
+interface DelayUntilOptions {
+  interval?: number;
+  timeout?: number;
+}
+
+// Bad: Fat interface with unrelated options
+interface DelayOptions {
+  interval?: number;
+  timeout?: number;
+  logger?: Logger;      // Not all callers need logging
+  retryCount?: number;  // Not related to until
+}
+```
+
+## Dependency Inversion Principle (DIP)
+Depend on abstractions, not concretions.
+
+### Promise-Based Abstractions
+```typescript
+// All delay functions return Promise<void>
+// Callers depend on the Promise abstraction, not setTimeout internals
+
+// Good: Abstract return type
+export function delay(ms: number): Promise<void>
+
+// Implementation detail hidden
+return new Promise(resolve => setTimeout(resolve, ms));
+```
+
+## Code Review Checklist
+- [ ] Does this function do ONE thing?
+- [ ] Can this be extended without modification?
+- [ ] Are sync/async variants interchangeable?
+- [ ] Is the interface minimal and focused?
+- [ ] Does it depend on abstractions (Promise, not setTimeout)?

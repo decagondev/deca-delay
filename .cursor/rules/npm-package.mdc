@@ -1,0 +1,113 @@
+---
+description: NPM package structure and conventions for deca-delay
+globs: ["package.json", "tsconfig.json", "tsup.config.ts", "src/**/*.ts"]
+---
+
+# NPM Package Conventions for deca-delay
+
+## Package Structure
+```
+deca-delay/
+├── src/
+│   ├── index.ts      # Public API exports
+│   ├── delay.ts      # Fixed delay module
+│   ├── random.ts     # Random delay module
+│   ├── until.ts      # Conditional delay module
+│   └── errors.ts     # Custom error classes
+├── dist/             # Build output (git-ignored)
+│   ├── index.js      # ESM bundle
+│   ├── index.cjs     # CommonJS bundle
+│   └── index.d.ts    # TypeScript declarations
+├── __tests__/        # Test files
+├── package.json
+├── tsconfig.json
+└── tsup.config.ts
+```
+
+## Dual ESM/CJS Support
+The package must support both module systems:
+
+### package.json exports
+```json
+{
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  }
+}
+```
+
+### tsup configuration
+```typescript
+export default defineConfig({
+  entry: ['src/index.ts'],
+  format: ['esm', 'cjs'],
+  dts: true,
+  sourcemap: true,
+  clean: true
+});
+```
+
+## Zero Runtime Dependencies
+- Keep bundle size < 1KB
+- No external runtime dependencies
+- Dev dependencies only for build/test tooling
+
+## Public API Design
+Export a single main function with static methods:
+
+```typescript
+// Usage patterns supported:
+import { delay } from 'deca-delay';
+
+await delay(1000);                    // Fixed delay
+await delay.random(500, 2000);        // Random delay
+await delay.until(() => condition);   // Conditional delay
+```
+
+## Version Management
+- Follow semantic versioning (semver)
+- Breaking changes = major version bump
+- New features = minor version bump
+- Bug fixes = patch version bump
+
+## Files to Publish
+Only include necessary files in npm package:
+
+```json
+{
+  "files": [
+    "dist"
+  ]
+}
+```
+
+## Scripts
+```json
+{
+  "scripts": {
+    "build": "tsup",
+    "test": "jest",
+    "prepublishOnly": "npm run build && npm test"
+  }
+}
+```
+
+## Node.js Compatibility
+- Minimum Node.js version: 14
+- Target: ES2020 for modern features
+- Test on LTS versions (14, 16, 18, 20)
+
+## Publishing Checklist
+- [ ] Version bumped in package.json
+- [ ] All tests pass
+- [ ] Build succeeds
+- [ ] README is up to date
+- [ ] CHANGELOG updated (if applicable)
+- [ ] `npm pack` to verify package contents

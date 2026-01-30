@@ -1,0 +1,57 @@
+---
+description: TypeScript conventions for deca-delay package
+globs: ["**/*.ts", "**/*.tsx"]
+---
+
+# TypeScript Conventions for deca-delay
+
+## Compiler Settings
+- Target: ES2020 for modern async/await support
+- Module: ESNext for tree-shaking compatibility
+- Strict mode: Always enabled
+
+## Type Safety Rules
+- NEVER use `any` type - use `unknown` with type guards instead
+- Prefer `interface` over `type` for object shapes (better error messages)
+- Use explicit return types on exported functions
+- Use `readonly` for arrays/objects that shouldn't be mutated
+
+## Function Signatures
+```typescript
+// Good: Explicit types, clear contract
+export function delay(ms: number): Promise<void>
+
+// Bad: Implicit any, unclear
+export function delay(ms)
+```
+
+## Async Patterns
+- Always return `Promise<T>` for async operations
+- Use `async/await` over raw Promise chains for readability
+- Handle rejections explicitly with try/catch or .catch()
+
+## Naming Conventions
+- camelCase for functions and variables
+- PascalCase for interfaces and types
+- UPPER_SNAKE_CASE for constants
+- Prefix interfaces with descriptive names (e.g., `DelayUntilOptions`)
+
+## Error Handling
+- Create custom error classes extending `Error`
+- Include descriptive error messages with context
+- Use type narrowing for error handling
+
+```typescript
+// Good: Custom error with context
+export class TimeoutError extends Error {
+  constructor(timeout: number) {
+    super(`Operation timed out after ${timeout}ms`);
+    this.name = 'TimeoutError';
+  }
+}
+```
+
+## Exports
+- Use named exports for all public API
+- Re-export from index.ts for clean public surface
+- Mark internal utilities as non-exported
