@@ -1,4 +1,4 @@
-import type { DelayUntilOptions, SyncCondition } from './types';
+import type { Condition, DelayUntilOptions } from './types';
 
 /**
  * Default polling interval in milliseconds
@@ -11,23 +11,39 @@ const DEFAULT_INTERVAL = 200;
 const DEFAULT_TIMEOUT = 30000;
 
 /**
+ * Checks if a value is a Promise-like object
+ */
+function isPromiseLike(value: unknown): value is Promise<unknown> {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    'then' in value &&
+    typeof (value as { then: unknown }).then === 'function'
+  );
+}
+
+/**
  * Waits until a condition function returns true, polling at a specified interval.
- * This version supports synchronous condition functions only.
+ * Supports both synchronous and asynchronous condition functions.
  *
- * @param condition - A function that returns true when the wait should end
+ * @param condition - A function that returns true (or Promise<true>) when the wait should end
  * @param options - Configuration options for polling behavior
  * @returns A Promise that resolves when the condition is met
  * @throws Error if the condition function is not a function
  *
  * @example
  * ```typescript
+ * // Sync condition
  * let ready = false;
  * setTimeout(() => ready = true, 1000);
- * await until(() => ready); // Resolves when ready becomes true
+ * await until(() => ready);
+ *
+ * // Async condition (e.g., with Playwright)
+ * await until(async () => await page.isVisible('#loaded'));
  * ```
  */
 export function until(
-  condition: SyncCondition,
+  condition: Condition,
   options: DelayUntilOptions = {}
 ): Promise<void> {
   if (typeof condition !== 'function') {
@@ -48,11 +64,16 @@ export function until(
   return new Promise<void>((resolve, reject) => {
     const startTime = Date.now();
 
-    const check = (): void => {
+    const check = async (): Promise<void> => {
       try {
         const result = condition();
 
-        if (result) {
+        // Handle both sync and async conditions using Promise.resolve
+        const resolvedResult = isPromiseLike(result)
+          ? await result
+          : result;
+
+        if (resolvedResult) {
           resolve();
           return;
         }

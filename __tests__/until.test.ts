@@ -145,3 +145,123 @@ describe('until (sync conditions)', () => {
     expect(ready).toBe(true);
   });
 });
+
+describe('until (async conditions)', () => {
+  const TIMING_TOLERANCE = 50;
+
+  it('should resolve immediately if async condition returns true', async () => {
+    const start = Date.now();
+    await until(async () => true);
+    const elapsed = Date.now() - start;
+
+    expect(elapsed).toBeLessThan(TIMING_TOLERANCE);
+  });
+
+  it('should wait until async condition becomes true', async () => {
+    let ready = false;
+    setTimeout(() => {
+      ready = true;
+    }, 100);
+
+    const start = Date.now();
+    await until(async () => ready, { interval: 50 });
+    const elapsed = Date.now() - start;
+
+    expect(elapsed).toBeGreaterThanOrEqual(100 - TIMING_TOLERANCE);
+    expect(ready).toBe(true);
+  });
+
+  it('should handle async condition that returns Promise', async () => {
+    let ready = false;
+    setTimeout(() => {
+      ready = true;
+    }, 100);
+
+    await until(
+      () => new Promise<boolean>(resolve => {
+        // Simulate async check
+        setTimeout(() => resolve(ready), 10);
+      }),
+      { interval: 50, timeout: 1000 }
+    );
+
+    expect(ready).toBe(true);
+  });
+
+  it('should propagate errors from async condition', async () => {
+    const errorMessage = 'Async condition failed';
+
+    await expect(
+      until(async () => {
+        throw new Error(errorMessage);
+      })
+    ).rejects.toThrow(errorMessage);
+  });
+
+  it('should propagate rejection from async condition', async () => {
+    const errorMessage = 'Promise rejected';
+
+    await expect(
+      until(() => Promise.reject(new Error(errorMessage)))
+    ).rejects.toThrow(errorMessage);
+  });
+
+  it('should timeout with async condition that never returns true', async () => {
+    await expect(
+      until(async () => false, { timeout: 100, interval: 20 })
+    ).rejects.toThrow('Condition not met within 100ms timeout');
+  });
+
+  it('should work with mixed sync and async behavior', async () => {
+    let callCount = 0;
+    let ready = false;
+
+    setTimeout(() => {
+      ready = true;
+    }, 100);
+
+    // Condition alternates between sync-like and truly async
+    await until(
+      async () => {
+        callCount++;
+        if (callCount % 2 === 0) {
+          // Truly async
+          return new Promise<boolean>(resolve => {
+            setTimeout(() => resolve(ready), 5);
+          });
+        }
+        // Immediately resolved promise (sync-like)
+        return ready;
+      },
+      { interval: 30, timeout: 1000 }
+    );
+
+    expect(ready).toBe(true);
+  });
+
+  it('should resolve to undefined with async condition', async () => {
+    const result = await until(async () => true);
+    expect(result).toBeUndefined();
+  });
+
+  it('should work with async condition that takes time to evaluate', async () => {
+    let ready = false;
+    setTimeout(() => {
+      ready = true;
+    }, 150);
+
+    const start = Date.now();
+    await until(
+      async () => {
+        // Simulate an async check that takes 20ms
+        await new Promise(resolve => setTimeout(resolve, 20));
+        return ready;
+      },
+      { interval: 50, timeout: 1000 }
+    );
+    const elapsed = Date.now() - start;
+
+    expect(elapsed).toBeGreaterThanOrEqual(150 - TIMING_TOLERANCE);
+    expect(ready).toBe(true);
+  });
+});
